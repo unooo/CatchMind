@@ -1,0 +1,56 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width" />
+    <title>Document</title>
+    <style>
+        .tbTitle,
+        .tbMaxUser {
+            background-color: aquamarine;
+        }
+    </style>
+<script src="/script/main.js"></script>
+<script>
+    let user;
+    window.onload = function () {
+    let roomList = "<%=JSON.stringify(rooms) %>";
+    let roomNowUserLst = "<%=JSON.stringify(roomNowUserLst) %>";
+    makeRoomList(roomList, roomNowUserLst);
+    user = "<%=JSON.stringify(user) %>";
+    if (user == "null")
+        return false;
+
+    user = parseEjsVar(user);
+    checkLogin(user);
+
+}
+</script>
+</head>
+<body>
+
+    <h1 style='display: inline;'>Catch Mind</h1>
+    <div id='LoginOrUser' style='display: inline; float: right; font-size:30px; border: 1px solid black'><a
+            href='/auth/login'>log In</a></div>
+    <p><input type='button' value='Create Room' onclick='showCreateRoomPopup()'> </p>
+
+    <fieldset>
+        <legend> Game Room List</legend>
+        <table style='text-align: center'>
+            <thead>
+                <tr>
+                    <th class='tbTitle'>Room Name</th>
+                    <th>Now User</th>
+                    <th class='tbMaxUser'>Max User</th>
+                    <th>Master</th>
+                </tr>
+            </thead>
+            <tbody id='roomsBody'>
+            </tbody>
+        </table>
+
+    </fieldset>
+
+</body>
+
+</html>

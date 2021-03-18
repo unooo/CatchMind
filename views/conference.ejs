@@ -1,0 +1,212 @@
+<head>
+  <meta charset='utf-8'>
+  <title>Page Title</title>
+
+  <meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable = 0'>
+  <link rel='stylesheet' href='/main.css'>
+  <link rel='stylesheet' href='/video.css'>
+  </link>
+  <script defer src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/script/resize.js"></script>
+  <script defer src="/script/draw.js"></script>
+  <script defer src="/script/rtc.js"></script>
+  <script defer>
+    var roomId = '<%=rId%>';
+    var chatSocket = io.connect(`https://www.unoo.kro.kr/chat`, { path: '/socket.io', });
+    var drawSocekt = io.connect(`https://www.unoo.kro.kr/game`, { path: '/socket.io', });
+
+    //localhost로 입력시 오류발생.
+    var myId = '<%=myId%>';
+    var canvas, context;
+
+    window.onload = function () {
+      device_check() == 'mobile' ? doResizeMobile() : doResizePc();
+      loadOldChat();
+      startup();
+      canvas = document.getElementById('mainCanvas');
+      console.log(canvas.width, canvas.height);
+      context = canvas.getContext("2d");
+      context.lineWidth = 2; // 선 굵기를 2픽셀로 설정
+      context.strokeStyle = "blue"; // 선 색을 파란색으로 지정
+
+    }
+
+    drawSocekt.on('receiveDraw', data => {
+      console.log('receiveDraw', data);
+      context.beginPath();
+      context.moveTo(data.startX, data.startY);
+      context.lineTo(data.curX, data.curY);
+      context.stroke();
+    });
+    drawSocekt.on('clearCanvas', () => {
+      clearCanvasFunc();
+    });
+
+    drawSocekt.on('setColor', (data) => {
+      context.strokeStyle = data;
+    })
+
+    chatSocket.on('newJoin', function (id, chats) {
+      let joiner = id;
+      let div = document.createElement('div');
+      div.classList.add('system');
+      let chat = document.createElement('div');
+      div.textContent = id + "님이 채팅방을 입장하셨습니다";
+      div.appendChild(chat);
+      document.getElementById('chatContent').append(div);
+      scrollDown();
+    })
+
+    chatSocket.on('exit', function (data) {
+      var div = document.createElement('div');
+      div.classList.add('system');
+      var chat = document.createElement('div');
+      div.textContent = data.chat;
+      div.appendChild(chat);
+      document.getElementById('chatContent').appendChild(div);
+    });
+
+    chatSocket.on('chat', function (id, message) {
+      console.log('receiveChat');
+      var div = document.createElement('div');
+      if (id === myId) {
+        div.classList.add('mine');
+      } else {
+        div.classList.add('other');
+      }
+      var name = document.createElement('div');
+      name.textContent = id;
+      div.appendChild(name);
+      var chat = document.createElement('div');
+      chat.textContent = message;
+      div.appendChild(chat);
+      div.style.color = id;
+      let chatContent = document.getElementById('chatContent');
+      chatContent.appendChild(div);
+      scrollDown();
+    });
+
+    function loadOldChat() {
+      let oldChats = "<%= JSON.stringify(chats) %>";
+      oldChats = oldChats.replace(/&#34;/gi, '\"');
+      oldChats = JSON.parse(oldChats);
+      if (oldChats) {
+
+        for (let i = 0; i < oldChats.length; i++) {
+
+          let div = document.createElement('div');
+          if (oldChats[i].user === myId) {
+            div.classList.add('mine');
+          } else {
+            div.classList.add('other');
+          }
+          let name = document.createElement('div');
+          name.textContent = oldChats[i].user;
+          div.appendChild(name);
+          let chat = document.createElement('div');
+          chat.textContent = oldChats[i].chat;
+          div.appendChild(chat);
+          div.style.color = oldChats[i].user;
+          document.getElementById('chatContent').appendChild(div);
+        }
+
+      }
+
+    }
+
+    function sendMessage() {
+      let messageEle = document.getElementById('chatMessage');
+      chatSocket.emit('chat', myId, messageEle.value);
+      messageEle.value = '';
+    }
+
+    function enterkey() {
+      if (window.event.keyCode == 13) {
+        sendMessage();
+        // 엔터키가 눌렸을 때 실행할 내용
+        login();
+      }
+    }
+
+    function scrollDown() {
+      let chatContent = document.getElementById('chatContent');
+      chatContent.scrollTop = chatContent.scrollHeight;
+    }
+    function toolExit() {
+      location.href = '/';
+    }
+    function toolClear() {
+      clearCanvasFunc();
+      drawSocekt.emit('clearCanvas');
+    }
+
+    function toolRecall() {
+      // rtcSocket.emit('peer-open', myPeerId);// peer-connect 소켓을 다시 리슨
+      try {
+        rtcSocket.emit('test');
+      } catch (error) {
+        alert(error);
+      }
+
+    }
+
+  </script>
+</head>
+
+<body>
+  <pre style='display: none ;' id="log" style="border: 0px solid black;"></pre>
+  <div id="video-grid" style='border:0px solid white; padding:0px;margin:0px;'>
+
+      <video id='myVideo' poster="/images/logo.png" muted playsinline autoplay>
+        </video>
+
+    
+  </div>
+  <div id="video-grid-Right" style='border:0px solid black; position:absolute ;right:0px;'></div>
+  <br>
+  <div>
+  <table class='toolAndcan' id='toolTable' style='table-layout: fixed;'>
+    <tr>
+      <td>
+        <div onclick='toolRecall()'>recall</div>
+      </td>
+      <td>
+        <div onclick='toolExit()'>exit</div>
+      </td>
+      <td>
+        <div>
+          <div>
+            color
+            <input type="color" id="color" name="head" value="#e66465">
+          </div>
+        </div>
+      </td>
+      <td>
+        <div onclick='toolClear()'>clear</div>
+      </td>
+    </tr>
+  </table>
+  <canvas class='toolAndcan' aria-readonly="true" style="display:block" id='mainCanvas' onmousemove='onMove(event)'
+    onmousedown='onDown(event)' onmouseup='onUp(event)'>
+  </canvas>
+  <table id='chatTable'>
+    <tr>
+      <td>
+        <fieldset>
+          <legend>Chat-OnAir</legend>
+          <div class="viewScroll" id='chatContentOuter' style="overflow:hidden">
+            <div class="blindScroll" id='chatContent' style="overflow-y:scroll"></div>
+          </div>
+        </fieldset>
+      </td>
+    </tr>
+    <tr style="float:right; width:100%">
+      <td style="float:right; width:100%"><input onkeyup='enterkey()' id='chatMessage' type='text'><input id='sendBtn'
+          type="button" value="전송" onclick="sendMessage()"></td>
+    </tr>
+  </table>
+</div>
+  <br>
+
+</body>
