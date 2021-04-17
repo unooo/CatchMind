@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
 let Room = require('../schemas/room.js');
+const wrap = require('../lib/wrap');
 module.exports = function (io) {
 
-  router.get('/', async function (request, response) {
+  router.get('/', wrap(async function (request, response) {
 
     try {
 
@@ -23,7 +24,7 @@ module.exports = function (io) {
     } catch (error) {
       console.log(error);
     }
-  });
+  }));
 
   router.get('/.well-known/acme-challenge/:key',function(request,response){
     console.log('인증중',request.params.key);

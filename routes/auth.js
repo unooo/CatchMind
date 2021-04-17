@@ -4,7 +4,7 @@ const shortid = require('shortid');
 const bcrypt = require('bcrypt');
 const saltRounds = 10; //일종의 노이즈
 let User = require('../schemas/user');
-
+const wrap = require('../lib/wrap');
 module.exports = function (passport) {
 
 
@@ -53,7 +53,7 @@ router.get('/register', function (request, response) {
   response.render('register', { ip });
 });
 
-router.post('/register_process', async function (request, response) {
+router.post('/register_process', wrap(async function (request, response) {
 
   var post = request.body;
   var id = post.id;
@@ -73,7 +73,7 @@ router.post('/register_process', async function (request, response) {
     response.send('/auth/register?ret=password_must_same!');
     return false;
   } else {
-    bcrypt.hash(pwd, saltRounds, async function (err, hash) {
+    bcrypt.hash(pwd, saltRounds, wrap(async function (err, hash) {
 
       const user = new User({
         id,
@@ -92,8 +92,8 @@ router.post('/register_process', async function (request, response) {
         //에러처리 지금은 무조건 성공한다고 가정
       });
 
-    });
+    }));
 
   }
 
-});
+}));
