@@ -2,7 +2,7 @@ const socketIo = require('socket.io');
 let Room = require('./schemas/room');
 let Chat = require('./schemas/chat');
 let passportSocketIo = require("passport.socketio");
-const wrap = require('../lib/wrap');
+
 module.exports = (server, app, sessionStore, cookieParser) => {
   const io = socketIo(server, { path: '/socket.io' });
   app.set('io', io);
@@ -21,7 +21,7 @@ module.exports = (server, app, sessionStore, cookieParser) => {
   const nameSpaceRtc = io.of('/rtc');
 
 
-  nameSpaceChat.on('connection',  wrap(async (socket) => {
+  nameSpaceChat.on('connection', async (socket) => {
     const req = socket.request;
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     //socket에서 꺼낸 request에서는 아래와 같이 접근해야 세션정보꺼냄
@@ -62,7 +62,7 @@ module.exports = (server, app, sessionStore, cookieParser) => {
       console.error(error);
     })
 
-  }))
+  })
 
   nameSpaceDraw.on('connection', (socket) => {
     const req = socket.request;

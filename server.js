@@ -2,7 +2,8 @@ const express = require('express');
 const app = express();
 //const server = require('http').Server(app);
 let https = require('https');
-fs = require('fs');
+ fs = require('fs');
+ // https 인증서 갱신 시 주석 시작/*
 var options = {
   key: fs.readFileSync('www.unoo.kro.kr-key.pem'),
   cert: fs.readFileSync('www.unoo.kro.kr-crt.pem'),
@@ -14,7 +15,7 @@ const server = https.Server(options, app);
 server.listen(443, function () {
   console.log('success https');
 })
-
+// https 인증서 갱신 시 주석 종료*/
 const { v4: uuidV4 } = require('uuid');
 require('dotenv').config();
 app.set('view engine', 'pug');
@@ -79,7 +80,6 @@ app.use('/', indexRouter);
 app.use('/room', roomRouter);
 app.use('/auth', authRouter);
 
-
 app.use(function (req, res, next) {
   console.log(req.url);
   res.status(404).send('Sorry cant find that!');
@@ -95,4 +95,7 @@ peerServer.on('disconnect', (client) => {
   console.log('peerServer.on(disconnect)')
 });
 
+//인증서 갱신용
 //server.listen(3000);
+//https 아닌 http로 인증서 도메인 인증
+//http://www.unoo.kro.kr

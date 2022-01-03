@@ -8,7 +8,7 @@ const wrap = require('../lib/wrap');
 module.exports = function (passport) {
 
 
-  router.get('/login', function (request, response) {
+  router.get('/login', function (request, response,next) {
     const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
     response.render('login', { ip });
   });
@@ -73,7 +73,7 @@ router.post('/register_process', wrap(async function (request, response) {
     response.send('/auth/register?ret=password_must_same!');
     return false;
   } else {
-    bcrypt.hash(pwd, saltRounds, wrap(async function (err, hash) {
+    bcrypt.hash(pwd, saltRounds, async function (err, hash) {
 
       const user = new User({
         id,
@@ -92,7 +92,7 @@ router.post('/register_process', wrap(async function (request, response) {
         //에러처리 지금은 무조건 성공한다고 가정
       });
 
-    }));
+    });
 
   }
 
