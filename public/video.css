@@ -1,19 +1,46 @@
 
       #video-grid {
         display: grid;
-        
-        /* grid-template-columns: repeat(auto-fill, 300px); */
-        /* grid-auto-rows: 300px; */
+        grid-template-columns: auto; 
       }
       #video-grid-Right {
+        
         display: grid;
-        /* grid-template-columns: repeat(auto-fill, 300px); */
-        /* grid-auto-rows: 300px; */
+         grid-template-columns: auto; 
       }
+      
       video {
         width: 100%;
         height: 100%;
+        position: relative;  
         object-fit: cover;
         border: 1px solid black;
       }
-   
+      
+      .overlay-text {
+        position: absolute;
+        color: #fff;
+        padding: 0% 2%;
+        z-index: 1;
+        width: fit-content;
+        background: radial-gradient(black, transparent);
+    }
+
+      .video-wrapper
+      {
+        width: 100%;
+        height: 100%;
+      }
+     .movie-player-wrapper {
+        /*position: relative;*/
+    	width: 100%;
+    	height: 30%;
+    	
+    }
+    #movie-player-wrapper .wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }

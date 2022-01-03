@@ -1,3 +1,4 @@
+
 var rtcSocket = io.connect(`https://www.unoo.kro.kr/rtc`, { path: '/socket.io', });
 const videoGrid = document.getElementById('video-grid');
 let mypeer;
@@ -11,7 +12,6 @@ myVideo.setAttribute('playsinline', true);
 myVideo.setAttribute('autoplay', true);
 */
 /* 미리 html에 만들어진 객체는 위의 세팅이 안먹힘*/
-
 //myVideo.volume=0;
 const peers = {};
 let myStream;
@@ -25,10 +25,11 @@ rtcSocket.on('connect', function () {
             audio: true,
         })
         .then((stream) => {
-            addVideoStream(myVideo, stream);
+            addVideoStream(myVideo, stream, myPeerId); 
             peerInit(stream);
         }).catch((err)=>{
-            alert("Camarea 장치가 없을시 서비스 참여 불가");
+            //alert("Camarea 장치가 없을시 서비스 참여 불가");
+           // window.history.back();
         });
 })
 
@@ -43,29 +44,33 @@ function peerInit(stream){
     });
 
     myPeer.on('open', (id) => {
-        log('피어서버로 통신이 열림')
+        log('시그널링서버로 통신이 열림')
         myPeerId = id;
+        //중요!!!!!!!!
+        //시그널링 서버로 내가 신규 참여했다는 사실을 전달
         rtcSocket.emit('peer-open', id);
     });
 
 
     myPeer.on('error', function (err) {
-        log("내 피어 에러 잡기" + err);
+        log("시그널링 서버연결에 에러 발생" + err);
+      
+        
     })
     myPeer.on('close', function (id) {
-        log('받았던전화끊김 마이피어')
+        log('시그널링 서버와의 연결 닫힘')
         log('closes' + id);
+      //  alert('peeronclose');
 
     })
     myPeer.on('disconnected', (id) => {
-        log('doooooooooo ' + id);
-        log('disconnected 받았던 전화가 연결끊김');
+        log('시그널링 서버와의 연결 해제')
+        log('disconnected'+ id);
+
     });
-
-
     myPeer.on('call', (call) => {
-        log("나한테들어온전화받음");
-        log(4);
+     
+        log("나한테들어온전화받음");      
         const video = document.createElement('video');
         video.id = call.peer;
         // video.style.border = '1px solid black';
@@ -73,51 +78,64 @@ function peerInit(stream){
         video.setAttribute('playsinline', true);
         video.setAttribute('autoplay', true);
         // const {video,box}=makeVideoBox();
-        call.answer(stream);
-        call.on('stream', (userVideoStream) => {
+        call.answer(stream); //내 스트림을 상대에게 전송
+        call.on('stream', (userVideoStream) => { //상대가 보낸 스트림을 내 화면에 뿌리기
             log('스트림을 통해 영상전송중');
-            let Flag;
+            let flag;
             if (!callList[call.peer]) {
                 callList[call.peer] = call;
-                log('이건가' + call.peer);
                 peers[call.peer] = call;
                 flag = true;
             } else {
                 flag = false;
             }
-
             addVideoStream(video, userVideoStream, flag);
         });
-        call.on('error', function (err) {
-            log("여기에러나옴" + err);
-        })
-        call.on('close', function (id) {
-            log('받았던전화끊김찾았다 ' + id + "\n" + call.peer);
-            log('closes ' + id);
 
+        call.on('error', function (err) {
+         //   alert('callonerror');
             try {
-                log('걸었던 전화가 끊긴 후 작업');
-                if (peers[id]) {
-                    peers[id].close();
-                    peers[id] = null;
-                    callList[call.peer] = null;
-                }
+                removePeer(call.peer);
                 if (video)
-                    video.remove();
+                    {
+                        let parent = video.parentNode;
+                        var len = parent.childElementCount;
+                        for(var i=0; i<len; i++)
+                            parent.removeChild(parent.childNodes[i]);
+                        parent.remove();
+                        //video.remove();
+                    }
                 setTimeout(() => {
                     adjustVideoGrid();
                 })
             } catch (error) {
                 alert(error);
             }
+        })
 
-
+        call.on('close', function () {
+            //alert('callonclose');
+            try {
+                removePeer(call.peer);
+                if (video){
+                    let parent = video.parentNode;
+                    var len = parent.childElementCount;
+                    for(var i=0; i<len; i++)
+                        parent.removeChild(parent.childNodes[i]);
+                    parent.remove();
+                    //video.remove();
+                }
+                setTimeout(() => {
+                    adjustVideoGrid();
+                })
+            } catch (error) {
+                alert(error);
+            }
         })
 
     });
-
     rtcSocket.on('peer-connected', (userId) => {
-        log('피어서버 통신열림 이후 소켓통해 피어아이디 전달')
+        log('시그널링 서버로부터 신규 참여자가 등장했다는 알람을 받음, 신규 유저를 내 화면에 렌더링 처리');
         // rtcSocket.emit('test');
         if (!peers[userId]) {
             connectToNewUser(userId, stream);
@@ -128,20 +146,6 @@ function peerInit(stream){
     });
 }
 
-function reSet(id, call, video) {
-    if (peers[id]) {
-        peers[id].close();
-        peers[id] = null;
-        callList[call.peer] = null;
-    }
-    if (video)
-        video.remove();
-    setTimeout(() => {
-        adjustVideoGrid();
-    })
-}
-
-
 rtcSocket.on('socket-disconnected', (userId) => {
     log('소켓을 통해 peer disconnect 처리중');
     if (peers[userId]) {
@@ -149,10 +153,17 @@ rtcSocket.on('socket-disconnected', (userId) => {
             log('peer 파괴 처리중 ');
             peers[userId].close();
             peers[userId] = null;
+            callList[userId]=null;
             let video = document.getElementById(userId);
             log('video ' + video);
-            if (video)
-                video.remove();
+            if (video){
+                let parent = video.parentNode;
+                var len = parent.childElementCount;
+                for(var i=0; i<len; i++)
+                    parent.removeChild(parent.childNodes[i]);
+                parent.remove();
+                //video.remove();
+            }
             adjustVideoGrid();
         } catch (err) {
             alert(err);
@@ -160,81 +171,98 @@ rtcSocket.on('socket-disconnected', (userId) => {
     }
 });
 
-function connectToNewUser(userId, stream) {
-    log("전화걸음")
-    const call = myPeer.call(userId, stream);
+function connectToNewUser(otherId, stream) {
 
+    const call = myPeer.call(otherId, stream);
     const video = document.createElement('video');
-    video.id = userId;
+    video.id = otherId;
     // video.style.border = '1px solid black';
     //video.setAttribute('muted', true);
     video.setAttribute('playsinline', true);
     video.setAttribute('autoplay', true);
-
+    console.log("상대접속처리");
     call.on('stream', (userVideoStream) => {
         log('call Stream');
-        let Flag;
+        let flag;
         if (!callList[call.peer]) {
             callList[call.peer] = call;
-            peers[userId] = call;
+            peers[otherId] = call;
             flag = true;
         } else {
             flag = false;
         }
-
         addVideoStream(video, userVideoStream, flag = true);
     });
-    call.on('close', (id) => {
-        log('close the call 걸었던 전화가 끊김 ');
-        try {
-            log('걸었던 전화가 끊긴 후 작업');
-            if (peers[userId]) {
-                peers[userId].close();
-                peers[userId] = null;
-                callList[call.peer] = null;
+    call.on('close', () => { 
+        try {          
+           removePeer(call.peer);
+            if (video){
+                let parent = video.parentNode;
+                var len = parent.childElementCount;
+                for(var i=0; i<len; i++)
+                    parent.removeChild(parent.childNodes[i]);
+                parent.remove();
+                //video.remove();
             }
-            if (video)
-                video.remove();
             setTimeout(() => {
                 adjustVideoGrid();
             })
         } catch (error) {
-            alert(error);
+//alert(error);
         }
-
     });
 
-    call.on('disconnected', (id) => {
+    call.on('disconnected', () => {
 
-        log('disconnected 걸었던 전화가 연결끊김');
         try {
-
-
-            if (peers[userId]) {
-                peers[userId].close();
-
-                peers[userId] = null;
-                callList[call.peer] = null;
+           removePeer(call.peer);
+            if (video){
+                let parent = video.parentNode;
+                var len = parent.childElementCount;
+                for(var i=0; i<len; i++)
+                    parent.removeChild(parent.childNodes[i]);
+                parent.remove();
+                //video.remove();
             }
-            if (video)
-                video.remove();
             setTimeout(() => {
                 adjustVideoGrid();
             })
         } catch (error) {
-            alert(err)
+           // alert(err)
         }
 
     });
-    call.on('error', (error) => {
-        log('걸었던 전화의 에러' + error);
-        //alert(error);
+    call.on('error', (err) => {
+        try {
+            removePeer(call.peer);
+             if (video){
+                let parent = video.parentNode;
+                var len = parent.childElementCount;
+                for(var i=0; i<len; i++)
+                    parent.removeChild(parent.childNodes[i]);
+                parent.remove();
+                //video.remove();
+            }
+             setTimeout(() => {
+                 adjustVideoGrid();
+             })
+         } catch (error) {
+             //alert(err)
+         }
+        
     });
-
-
-
 }
 
+function removePeer(rmPeerId){
+    if (peers[rmPeerId]) {
+        peers[rmPeerId].close();
+        peers[rmPeerId] = null;
+        callList[rmPeerId] = null;
+        ;
+        delete peers[rmPeerId];
+        delete callList[rmPeerId];
+    }
+}
 function addVideoStream(video, stream, flag = true) {
 
     try {
@@ -242,7 +270,6 @@ function addVideoStream(video, stream, flag = true) {
     } catch (error) {
         alert(error);
     }
-
     video.addEventListener('loadedmetadata', () => {
         try {
             log('비디오 재생');
@@ -250,35 +277,61 @@ function addVideoStream(video, stream, flag = true) {
         } catch (error) {
             alert('비디오재생에러');
         }
-
     });
-    
-
     if (device_check() == 'mobile') {
-        videoGrid.append(video);
+        if(flag==true){
+            videoGrid.append(video);
+        }else{
+
+        }
     } else {
+        let div = document.createElement('div');
+        div.classList.add('video-wrapper');     
+        let div2 = document.createElement('div');
+        div2.classList.add('overlay-text');
+        div2.innerText = "test";
+
         let leftGrid = document.getElementById('video-grid');
         let rightGrid = document.getElementById('video-grid-Right');
+        
+        if(video.parentNode && video.parentNode.classList[0] == "video-wrapper")
+        {
+            var aa= '수정필요';
+
+        }
+        video.style.height = (document.body.offsetHeight)/3+ "px";
         if (flag == true) {
+            let grid = leftGrid.childElementCount > rightGrid.childElementCount ? rightGrid : leftGrid;
+            div.append(div2);
+            div.append(video);
+            grid.append(div);
+            /*
             if (leftGrid.childElementCount > rightGrid.childElementCount) {
-                rightGrid.append(video);
+                {
+                    div.append(div2);
+                    div.append(video);
+                    rightGrid.append(div);
+                }    
             } else {
-                leftGrid.append(video);
+                {
+                    div.append(div2);
+                    div.append(video);
+                    leftGrid.append(div);
+                }
             }
+            */
         }
     }
-
     setTimeout(() => {
         adjustVideoGrid();
     })
 
 }
-
 function log(msg) {
+    console.log(msg);
     var p = document.getElementById('log');
     p.innerHTML = msg + "\n" + p.innerHTML;
 }
-
 function makeVideoBox() {
     const box = document.createElement('div');
     const volControl = document.createElement('input');
@@ -300,7 +353,6 @@ function makeVideoBox() {
     box.append(volControl);
     return { video, box };
 }
-
 function SetVolume(event, video, val) {
     console.log('Before: ' + video.volume);
     video.volume = val / 100;

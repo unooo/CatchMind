@@ -3,14 +3,18 @@
   <title>Page Title</title>
 
   <meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable = 0'>
-  <link rel='stylesheet' href='/main.css'>
-  <link rel='stylesheet' href='/video.css'>
+  <link rel='stylesheet' href='/main.css'> </link>
+  <link rel='stylesheet' href='/video.css'> </link>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">  </link>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" type="text/css" rel="stylesheet"/>
   </link>
-  <script defer src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+  
   <script src="/socket.io/socket.io.js"></script>
   <script src="/script/resize.js"></script>
   <script defer src="/script/draw.js"></script>
   <script defer src="/script/rtc.js"></script>
+  <script defer src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
   <script defer>
     var roomId = '<%=rId%>';
     var chatSocket = io.connect(`https://www.unoo.kro.kr/chat`, { path: '/socket.io', });
@@ -52,9 +56,9 @@
       let div = document.createElement('div');
       div.classList.add('system');
       let chat = document.createElement('div');
-      div.textContent = id + "님이 채팅방을 입장하셨습니다";
+      div.textContent = id + "님이 채팅방을 입장하셨습니다.";
       div.appendChild(chat);
-      document.getElementById('chatContent').append(div);
+      document.getElementById('msg_history').append(div);
       scrollDown();
     })
 
@@ -64,26 +68,13 @@
       var chat = document.createElement('div');
       div.textContent = data.chat;
       div.appendChild(chat);
-      document.getElementById('chatContent').appendChild(div);
+      document.getElementById('msg_history').appendChild(div);
     });
 
     chatSocket.on('chat', function (id, message) {
       console.log('receiveChat');
-      var div = document.createElement('div');
-      if (id === myId) {
-        div.classList.add('mine');
-      } else {
-        div.classList.add('other');
-      }
-      var name = document.createElement('div');
-      name.textContent = id;
-      div.appendChild(name);
-      var chat = document.createElement('div');
-      chat.textContent = message;
-      div.appendChild(chat);
-      div.style.color = id;
-      let chatContent = document.getElementById('chatContent');
-      chatContent.appendChild(div);
+      var div = setMsg(id === myId ? 1 : 2, message, id);
+      document.getElementById('msg_history').appendChild(div);
       scrollDown();
     });
 
@@ -94,25 +85,37 @@
       if (oldChats) {
 
         for (let i = 0; i < oldChats.length; i++) {
-
-          let div = document.createElement('div');
-          if (oldChats[i].user === myId) {
-            div.classList.add('mine');
-          } else {
-            div.classList.add('other');
-          }
-          let name = document.createElement('div');
-          name.textContent = oldChats[i].user;
-          div.appendChild(name);
-          let chat = document.createElement('div');
-          chat.textContent = oldChats[i].chat;
-          div.appendChild(chat);
-          div.style.color = oldChats[i].user;
-          document.getElementById('chatContent').appendChild(div);
+          let div = setMsg(oldChats[i].user === myId ? 1 : 2, oldChats[i].chat, oldChats[i].user);
+          document.getElementById('msg_history').appendChild(div);
         }
-
       }
+    }
 
+    function setMsg(flag, chatMsg, id) {
+      let div = document.createElement('div');
+      let msgDiv = document.createElement('div');
+      let chat   = document.createElement('p');
+      let user = document.createElement('span');
+      chat.textContent = chatMsg;
+      user.classList.add('user_name');
+      user.textContent = id;
+      if(flag == 1)
+      {
+        div.classList.add('outgoing_msg');
+        msgDiv.classList.add('sent_msg');        
+        msgDiv.append(chat);
+        div.append(msgDiv);
+      } else {
+        div.classList.add('incoming_msg');
+        msgDiv.classList.add('received_msg');
+        msgDiv.append(user);
+        let revMsg = document.createElement('div');
+        revMsg.classList.add('received_withd_msg');
+        revMsg.append(chat);
+        msgDiv.append(revMsg);
+        div.append(msgDiv);
+      }
+      return div;
     }
 
     function sendMessage() {
@@ -130,7 +133,7 @@
     }
 
     function scrollDown() {
-      let chatContent = document.getElementById('chatContent');
+      let chatContent = document.getElementById('msg_history');
       chatContent.scrollTop = chatContent.scrollHeight;
     }
     function toolExit() {
@@ -150,63 +153,88 @@
       }
 
     }
-
+    
   </script>
 </head>
 
-<body>
+<body onresize='resizeCanvas()'>
   <pre style='display: none ;' id="log" style="border: 0px solid black;"></pre>
-  <div id="video-grid" style='border:0px solid white; padding:0px;margin:0px;'>
-
-      <video id='myVideo' poster="/images/logo.png" muted playsinline autoplay>
-        </video>
-
-    
-  </div>
-  <div id="video-grid-Right" style='border:0px solid black; position:absolute ;right:0px;'></div>
-  <br>
-  <div>
-  <table class='toolAndcan' id='toolTable' style='table-layout: fixed;'>
-    <tr>
-      <td>
-        <div onclick='toolRecall()'>recall</div>
-      </td>
-      <td>
-        <div onclick='toolExit()'>exit</div>
-      </td>
-      <td>
-        <div>
-          <div>
-            color
-            <input type="color" id="color" name="head" value="#e66465">
+  <div class='row' id='container2'>
+    <div class='col-md-3' >
+        <div id="video-grid">
+            <video id='myVideo' poster="/images/logo.png" muted playsinline autoplay></video>
+      </div>
+  </div>  
+  
+    <div class='col-md-4'>
+      <div class='row'>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="toolTable">
+          <div class="container-fluid">
+            <a class="navbar-brand" href="#">Menu</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+              <div class="navbar-nav">
+                <a class="nav-link" aria-current="recall" onclick="toolRecall()">recall</a>
+                <a class="nav-link">color<div style='margin-top:3px; margin-left:3px; float:right;'><input type="color" id="color" name="head" value="#e66465" style="width:20px; height:20px;"></div>
+                </a>
+                <a class="nav-link" onclick="toolClear()" >clear</a>
+                <a class="nav-link" onclick="toolExit()" >exit</a>
+              </div>
+            </div>
           </div>
+        </nav>
+      </div> 
+      <div class='row' style='max-height:450px; min-height: 200px;'> 
+        <canvas class='toolAndcan' aria-readonly="true" style="display:block" id='mainCanvas' onmousemove='onMove(event)'
+          onmousedown='onDown(event)' onmouseup='onUp(event)'>
+        </canvas>
+      </div>
+      <div class='row'>
+        <div class="mesgs">
+          <div class="msg_history" id='msg_history'>
+          </div>
+          <div class="type_msg">
+            <div class="input_msg_write">
+              <input type="text" class="write_msg" placeholder="Type a message" id='chatMessage' onkeyup='enterkey()'/>
+              <button class="msg_send_btn" type="button" id='sendBtn' onclick="sendMessage()"><i class="fa fa-paper-plane-o" aria-hidden="true" ></i></button>
+            </div>
+          </div> 
         </div>
-      </td>
-      <td>
-        <div onclick='toolClear()'>clear</div>
-      </td>
-    </tr>
-  </table>
-  <canvas class='toolAndcan' aria-readonly="true" style="display:block" id='mainCanvas' onmousemove='onMove(event)'
-    onmousedown='onDown(event)' onmouseup='onUp(event)'>
-  </canvas>
-  <table id='chatTable'>
-    <tr>
-      <td>
-        <fieldset>
-          <legend>Chat-OnAir</legend>
-          <div class="viewScroll" id='chatContentOuter' style="overflow:hidden">
-            <div class="blindScroll" id='chatContent' style="overflow-y:scroll"></div>
-          </div>
-        </fieldset>
-      </td>
-    </tr>
-    <tr style="float:right; width:100%">
-      <td style="float:right; width:100%"><input onkeyup='enterkey()' id='chatMessage' type='text'><input id='sendBtn'
-          type="button" value="전송" onclick="sendMessage()"></td>
-    </tr>
-  </table>
-</div>
+      </div>  
+      <!--div class='row'>
+        <table id='chatTable'>
+          <tr>
+            <td>
+              <fieldset>
+                <legend>Chat-OnAir</legend>
+                <div class="viewScroll" id='chatContentOuter' style="overflow:hidden">
+                  <div class="blindScroll" id='chatContent' style="overflow-y:scroll"></div>
+                </div>
+              </fieldset>
+            </td>
+          </tr>
+          <tr style="float:right; width:100%">
+            <td style="float:right; width:100%">
+              <div class="type_msg">
+                <div class="input_msg_write">
+                  <input type="text" class="write_msg" placeholder="Type a message" id='chatMessage'/>
+                  <button class="msg_send_btn" type="button" id='sendBtn' onclick="sendMessage()"><i class="fa fa-paper-plane-o" aria-hidden="true" ></i></button>
+                </div>
+              </div>  
+            </td>
+          </tr>
+        </table>
+      </div-->
+    </div> 
+
+    <div class='col-md-3' >
+        <div id="video-grid-Right">
+
+        </div>
+    </div>
+  </div>
   <br>
 
 </body>

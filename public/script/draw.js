@@ -11,7 +11,8 @@ function draw(startX, startY, curX, curY) {
     drawSocekt.emit("sendDraw", { startX, startY, curX, curY })
 }
 function onMove(e) {
-    console.log(canvas.width, canvas.height);
+   // console.log(canvas.width, canvas.height);
+
     if (clickFlag == false)
         return;
     var curX = e.offsetX, curY = e.offsetY;

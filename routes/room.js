@@ -3,10 +3,10 @@ var router = express.Router();
 
 let Chat = require('../schemas/chat');
 let Room = require('../schemas/room');
-const wrap = require('../lib/wrap');
+
 module.exports = function (io) {
 
-    router.get('/:roomId', wrap(async function (request, response) {
+    router.get('/:roomId', async function (request, response) {
         if(!request.isAuthenticated()){
             response.redirect('/?ret=Please_Login');
         }// 클라이언트단에서 막아두긴했으나 일단처리해둠
@@ -21,9 +21,9 @@ module.exports = function (io) {
 
         response.render('conference.ejs', { rId, chats, myId });
 
-    }));
+    });
 
-    router.post('/', wrap(async function (request, response) {
+    router.post('/', async function (request, response) {
 
         if (!request.isAuthenticated()) {
             response.send({
@@ -53,9 +53,9 @@ module.exports = function (io) {
             status: true,
             rooms, roomNowUserLst
         });
-    }))
+    })
 
-    router.delete('/', wrap(async function (request, response) {
+    router.delete('/', async function (request, response) {
 
         if (!request.isAuthenticated()) {
             response.send({
@@ -88,7 +88,7 @@ module.exports = function (io) {
             status: true,
             rooms, roomNowUserLst
         });
-    }))
+    })
 
     return router;
 

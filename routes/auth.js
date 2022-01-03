@@ -8,7 +8,7 @@ const wrap = require('../lib/wrap');
 module.exports = function (passport) {
 
 
-  router.get('/login', function (request, response,next) {
+  router.get('/login', function (request, response) {
     const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
     response.render('login', { ip });
   });
@@ -53,7 +53,8 @@ router.get('/register', function (request, response) {
   response.render('register', { ip });
 });
 
-router.post('/register_process', wrap(async function (request, response) {
+router.post('/register_process', wrap( async function (request, response) {
+
 
   var post = request.body;
   var id = post.id;
