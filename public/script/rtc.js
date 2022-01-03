@@ -36,6 +36,12 @@ rtcSocket.on('connect', function () {
 function peerInit(stream){
 
     myPeer = new Peer(null, {
+        "iceServers": [
+            {
+                urls: 'stun:stun.l.google.com:19302'
+            }
+            , { 'urls': 'turn:58.238.248.102:3478', 'credential': 'myPw', 'username': 'myId' }
+        ],
         host: 'www.unoo.kro.kr',
         port: 443,
         path: '/peerjs/myapp',
