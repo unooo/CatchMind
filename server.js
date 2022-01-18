@@ -18,7 +18,6 @@ server.listen(443, function () {
 // https 인증서 갱신 시 주석 종료*/
 const { v4: uuidV4 } = require('uuid');
 require('dotenv').config();
-app.set('view engine', 'pug');
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 

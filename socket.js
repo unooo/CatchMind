@@ -28,13 +28,10 @@ module.exports = (server, app, sessionStore, cookieParser) => {
 
     const myName = socket.request.user.name;
     console.log("chat space 신규 접속", ip, socket.id, myName);
-
     const splitUrl = req.headers.referer.split('/');
     const roomId = splitUrl[splitUrl.length - 1];
     socket.join(roomId);
-
     let chats = await Chat.find({});
-
     nameSpaceChat.to(roomId).emit("newJoin", myName, chats);
 
     socket.on('chat', function (id, message) {
@@ -48,7 +45,6 @@ module.exports = (server, app, sessionStore, cookieParser) => {
       chat.save().catch(error => {
         console.log(error);
       });
-
       nameSpaceChat.to(roomId).emit('chat', id, message);
     })
 
@@ -65,11 +61,11 @@ module.exports = (server, app, sessionStore, cookieParser) => {
   })
 
   nameSpaceDraw.on('connection', (socket) => {
+
     const req = socket.request;
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const myName = socket.request.user.name;
     console.log("draw space 신규 접속", ip, socket.id, myName);
-
     const splitUrl = req.headers.referer.split('/');
     const roomId = splitUrl[splitUrl.length - 1];
     socket.join(roomId);
@@ -86,13 +82,13 @@ module.exports = (server, app, sessionStore, cookieParser) => {
       console.log('clear Canvas');
       //나를 제외한 룸의 에밋
       socket.broadcast.to(roomId).emit("clearCanvas");
-    })
+    });
 
     socket.on('setColor', (data) => {
       console.log('Set Canvas Color' + data);
       //나를 제외한 룸의 에밋
       socket.broadcast.to(roomId).emit("setColor", data);
-    })
+    });
 
     socket.on('disconnect', () => {
       console.log('client out', ip, socket.id);
@@ -101,8 +97,7 @@ module.exports = (server, app, sessionStore, cookieParser) => {
 
     socket.on('error', (error) => {
       console.error(error);
-    })
-
+    });
 
   })
 
@@ -142,13 +137,10 @@ module.exports = (server, app, sessionStore, cookieParser) => {
 
   function onAuthorizeSuccess(data, accept) {
     console.log('successful connection to socket.io');
-
     // The accept-callback still allows us to decide whether to
     // accept the connection or not.
     accept(null, true);
-
     // OR
-
     // If you use socket.io@1.X the callback looks different
     accept();
   }
@@ -157,12 +149,9 @@ module.exports = (server, app, sessionStore, cookieParser) => {
     if (error)
       throw new Error(message);
     console.log('failed connection to socket.io:', message);
-
     // We use this callback to log all of our failed connections.
     accept(null, false);
-
     // OR
-
     // If you use socket.io@1.X the callback looks different
     // If you don't want to accept the connection
     if (error)

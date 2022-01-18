@@ -49,13 +49,10 @@ module.exports = function (passport) {
 
 router.get('/register', function (request, response) {
   const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
-
   response.render('register', { ip });
 });
 
 router.post('/register_process', wrap( async function (request, response) {
-
-
   var post = request.body;
   var id = post.id;
   var pwd = post.pwd;
